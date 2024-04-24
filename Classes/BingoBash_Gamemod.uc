@@ -10,10 +10,9 @@ var int cruiseTimepiecesRequired;
 
 event OnModLoaded()
 {
-
-    //TODO: Refactor this, remove UnlockDW 
-
-   UnlockDW();
+    if(class'BingoBash_Gamemod'.static.ShowDebugMessage()){
+        Print("Mod loaded succesfully");
+    }
 }
 
 //TODO Implement command to lock and unlock all again in case the mod is setup wrong.
@@ -29,34 +28,10 @@ event OnTimePieceCollected(string Identifier){
 
 event OnConfigChanged(Name ConfigName){
 
-    if(ConfigName == 'ShowDebugMessages'){
-
-        if(ShowDebugMessages == 0){
-            isdebugEnabled = false;
-        } else{
-            isdebugEnabled = true;
-        }
-    }
     if(ConfigName == 'unlockCruise'){
 
         cruiseTimepiecesRequired = unlockCruise;
         Hat_ChapterInfo'HatinTime_ChapterInfo_DLC1.ChapterInfos.ChapterInfo_Cruise'.RequiredHourglassCount = cruiseTimepiecesRequired;
-    }
-    if(ConfigName == 'RemoveAllParentsDW'){
-
-        if(RemoveAllParentsDW == 0){
-            removeParentsDW = false;
-        } else{
-            removeParentsDW = true;
-        }
-    }
-    if(ConfigName == 'RemoveLevelRequirementDW'){
-
-        if(RemoveLevelRequirementDW == 0){
-            removeLevelReqDW = false;
-        } else{
-            removeLevelReqDW = true;
-        }
     }
 
 
@@ -83,6 +58,30 @@ function static RemoveAllStampRequirements()
         
         DefaultContract.RequiredStamps = 0;
         //Remove requirement to clear the BaseLevel to attempt the deathwish
+        }
+
+    `SaveManager.SaveToFile(true);
+}
+
+function static RemoveAllParentsDWRequirements()
+{
+    local Array<class<object>> ObjectClasses;
+    local class<Hat_SnatcherContract_DeathWish> DeathWish;
+    local Hat_SnatcherContract_DeathWish DefaultContract;
+    local int i;
+    local Array<class<Hat_SnatcherContract_DeathWish>> ParentDeathWishes;
+
+    ObjectClasses = class'Hat_ClassHelper'.static.GetAllScriptClasses("Hat_SnatcherContract_DeathWish");
+    for (i = 0; i < ObjectClasses.Length; i++)
+    {
+        DeathWish = class<Hat_SnatcherContract_DeathWish>(ObjectClasses[i]);
+
+        if (DeathWish.GetPackageName() != 'HatinTimeGameContent') continue;
+        if (!DeathWish.static.ConsiderForDeathWishTotal()) continue;
+
+        DefaultContract = Hat_SnatcherContract_DeathWish(DynamicLoadObject("HatinTimeGameContent.Default__" $ string(DeathWish), class'Hat_SnatcherContract_DeathWish', true));
+        if (DefaultContract == None) continue;
+        
         if(default.RemoveAllParentsDW > 0){
             
             DefaultContract.ParentDeathWishes.Length = 0;
@@ -101,9 +100,39 @@ function static RemoveAllStampRequirements()
     `SaveManager.SaveToFile(true);
 }
 
+function static RemoveAllBaseLevelRequirementsDW()
+{
+    local Array<class<object>> ObjectClasses;
+    local class<Hat_SnatcherContract_DeathWish> DeathWish;
+    local Hat_SnatcherContract_DeathWish DefaultContract;
+    local int i;
+    local Array<class<Hat_SnatcherContract_DeathWish>> ParentDeathWishes;
+
+    ObjectClasses = class'Hat_ClassHelper'.static.GetAllScriptClasses("Hat_SnatcherContract_DeathWish");
+    for (i = 0; i < ObjectClasses.Length; i++)
+    {
+        DeathWish = class<Hat_SnatcherContract_DeathWish>(ObjectClasses[i]);
+
+        if (DeathWish.GetPackageName() != 'HatinTimeGameContent') continue;
+        if (!DeathWish.static.ConsiderForDeathWishTotal()) continue;
+
+        DefaultContract = Hat_SnatcherContract_DeathWish(DynamicLoadObject("HatinTimeGameContent.Default__" $ string(DeathWish), class'Hat_SnatcherContract_DeathWish', true));
+        if (DefaultContract == None) continue;
+
+        if(default.RemoveLevelRequirementDW > 0) {    
+            
+            SetVariable(class'WorldInfo'.static.GetWorldInfo().GetALocalPlayerController(), string(DefaultContract), "IsCommunity", "true");
+        }
+            
+        }
+
+    `SaveManager.SaveToFile(true);
+}
+
+
 function UnlockBoat(){
     UnlockDoor(Hat_ChapterInfo'HatinTime_ChapterInfo_DLC1.ChapterInfos.ChapterInfo_Cruise');
-    if(Class'BingoBash_Gamemod'.static.ShowDebugMessages()){
+    if(Class 'BingoBash_Gamemod'.static.ShowDebugMessage()){
         WorldInfo.Game.Broadcast(none,"Boat unlocked");
     }
 }
@@ -113,7 +142,11 @@ function UnlockDW(){
     class'Hat_SaveBitHelper'.static.HasLevelBit("DeathWish_intro", 1, `GameManager.HubMapName);
     RemoveAllStampRequirements();
 
-    if(Class'BingoBash_Gamemod'.static.ShowDebugMessages()){
+    if(RemoveAllParentsDW > 0) RemoveAllParentsDWRequirements();
+
+    if(RemoveLevelRequirementDW > 1) RemoveAllBaseLevelRequirementsDW();
+
+    if(Class'BingoBash_Gamemod'.static.ShowDebugMessage ()){
         WorldInfo.Game.Broadcast(none,"DeathWish Unlocked after:");
     }
 }
@@ -164,5 +197,4 @@ static function bool ShowDebugMessage()
 {
   return default.ShowDebugMessages > 0;
 }
-
 
