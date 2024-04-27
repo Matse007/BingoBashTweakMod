@@ -21,7 +21,7 @@ event OnTimePieceCollected(string Identifier){
         UnlockDW();
 
     }
-    if(`GameManager.GetTimeObjects() == cruiseTimepiecesRequired) UnlockBoat();
+    if(`GameManager.GetTimeObjects() == unlockCruise) UnlockBoat();
     
     
 }
@@ -144,7 +144,7 @@ function UnlockDW(){
 
     if(RemoveAllParentsDW > 0) RemoveAllParentsDWRequirements();
 
-    if(RemoveLevelRequirementDW > 1) RemoveAllBaseLevelRequirementsDW();
+    if(RemoveLevelRequirementDW > 0) RemoveAllBaseLevelRequirementsDW();
 
     if(Class'BingoBash_Gamemod'.static.ShowDebugMessage ()){
         WorldInfo.Game.Broadcast(none,"DeathWish Unlocked after:");
